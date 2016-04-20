@@ -13,18 +13,16 @@
 
 // consts get stored in flash as we don't adjust them
 char* tracks[] = {
-  "", // Track 1
-  "" // Track 2
+"", // Track 1
+"" // Track 2
 };
 
 char revTrack[41];
 
-const int sublen[] = {
-  32, 48, 48
-};
-const int bitlen[] = {
-  7, 5, 5
-};
+const int sublen[] = { 
+  32, 48, 48 };
+const int bitlen[] = { 
+  7, 5, 5 };
 
 unsigned int curTrack = 0;
 int dir;
@@ -68,7 +66,7 @@ void reverseTrack(int track)
   while (revTrack[i++] != '\0');
   i--;
   while (i--)
-    for (int j = bitlen[track] - 1; j >= 0; j--)
+    for (int j = bitlen[track]-1; j >= 0; j--)
       playBit((revTrack[i] >> j) & 1);
 }
 
@@ -92,7 +90,7 @@ void playTrack(int track)
     crc = 1;
     tmp = tracks[track][i] - sublen[track];
 
-    for (int j = 0; j < bitlen[track] - 1; j++)
+    for (int j = 0; j < bitlen[track]-1; j++)
     {
       crc ^= tmp & 1;
       lrc ^= (tmp & 1) << j;
@@ -100,12 +98,12 @@ void playTrack(int track)
       tmp >>= 1;
     }
     playBit(crc);
-  }
+  } 
 
   // finish calculating and send last "byte" (LRC)
   tmp = lrc;
   crc = 1;
-  for (int j = 0; j < bitlen[track] - 1; j++)
+  for (int j = 0; j < bitlen[track]-1; j++)
   {
     crc ^= tmp & 1;
     playBit(tmp & 1);
@@ -149,37 +147,58 @@ void storeRevTrack(int track)
     crc = 1;
     tmp = tracks[track][i] - sublen[track];
 
-    for (int j = 0; j < bitlen[track] - 1; j++)
+    for (int j = 0; j < bitlen[track]-1; j++)
     {
       crc ^= tmp & 1;
       lrc ^= (tmp & 1) << j;
       tmp & 1 ?
-      (revTrack[i] |= 1 << j) :
-      (revTrack[i] &= ~(1 << j));
+        (revTrack[i] |= 1 << j) :
+        (revTrack[i] &= ~(1 << j));
       tmp >>= 1;
     }
     crc ?
-    (revTrack[i] |= 1 << 4) :
-    (revTrack[i] &= ~(1 << 4));
-  }
+      (revTrack[i] |= 1 << 4) :
+      (revTrack[i] &= ~(1 << 4));
+  } 
 
   // finish calculating and send last "byte" (LRC)
   tmp = lrc;
   crc = 1;
-  for (int j = 0; j < bitlen[track] - 1; j++)
+  for (int j = 0; j < bitlen[track]-1; j++)
   {
     crc ^= tmp & 1;
     tmp & 1 ?
-    (revTrack[i] |= 1 << j) :
-    (revTrack[i] &= ~(1 << j));
+      (revTrack[i] |= 1 << j) :
+      (revTrack[i] &= ~(1 << j));
     tmp >>= 1;
   }
   crc ?
-  (revTrack[i] |= 1 << 4) :
-  (revTrack[i] &= ~(1 << 4));
+    (revTrack[i] |= 1 << 4) :
+    (revTrack[i] &= ~(1 << 4));
 
   i++;
   revTrack[i] = '\0';
+}
+
+void sleep()
+{
+  GIMSK |= _BV(PCIE);                     // Enable Pin Change Interrupts
+  PCMSK |= _BV(PCINT2);                   // Use PB3 as interrupt pin
+  ADCSRA &= ~_BV(ADEN);                   // ADC off
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);    // replaces above statement
+
+  MCUCR &= ~_BV(ISC01);
+  MCUCR &= ~_BV(ISC00);       // Interrupt on rising edge
+  sleep_enable();                         // Sets the Sleep Enable bit in the MCUCR Register (SE BIT)
+  sei();                                  // Enable interrupts
+  sleep_cpu();                            // sleep
+
+  cli();                                  // Disable interrupts
+  PCMSK &= ~_BV(PCINT2);                  // Turn off PB3 as interrupt pin
+  sleep_disable();                        // Clear SE bit
+  ADCSRA |= _BV(ADEN);                    // ADC on
+
+  sei();                                  // Enable interrupts
 }
 
 void stringCallback(char *track) {
@@ -192,6 +211,10 @@ void stringCallback(char *track) {
   Firmata.sendString(track);
 }
 
+void sysexCallback(byte command, byte argc, byte *argv) {
+  Firmata.sendSysex(command, argc, argv);
+}
+
 void setup() {
   pinMode(PIN_A, OUTPUT);
   pinMode(PIN_B, OUTPUT);
@@ -200,11 +223,12 @@ void setup() {
 
   // blink to show we started up
   blink(ENABLE_PIN, 200, 3);
-
+  
   // store reverse track 2 to play later
   storeRevTrack(2);
   Firmata.setFirmwareVersion(FIRMATA_MAJOR_VERSION, FIRMATA_MINOR_VERSION);
   Firmata.attach(STRING_DATA, stringCallback);
+  Firmata.attach(START_SYSEX, sysexCallback);
   Firmata.begin(57600);
 }
 
