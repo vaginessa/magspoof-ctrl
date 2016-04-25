@@ -27,4 +27,6 @@ public interface MagspoofService {
     void sendID(String id);
 
     void stop();
+
+    String getFirmataVersion();
 }

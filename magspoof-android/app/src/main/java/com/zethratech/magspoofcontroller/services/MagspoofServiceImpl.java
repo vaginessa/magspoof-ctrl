@@ -22,6 +22,8 @@ import android.app.Activity;
 import android.util.Log;
 
 import org.shokai.firmata.ArduinoFirmata;
+import org.shokai.firmata.ArduinoFirmataDataHandler;
+import org.shokai.firmata.ArduinoFirmataEventHandler;
 
 import java.io.IOException;
 
@@ -30,14 +32,34 @@ public class MagspoofServiceImpl implements MagspoofService{
     private String TAG = "MagspoofController - MagspoofServiceImpl";
     private ArduinoFirmata arduino = null;
 
-    public void init(Activity activity) {
+    public void init(final Activity activity) {
         arduino =  new ArduinoFirmata(activity);
         try{
             arduino.connect();
+            Log.v(TAG, "Board Version : "+arduino.getBoardVersion());
         }
         catch(IOException | InterruptedException e){
             e.printStackTrace();
         }
+        arduino.setEventHandler(new ArduinoFirmataEventHandler(){
+            public void onError(String errorMessage){
+                Log.e(TAG, errorMessage);
+            }
+            public void onClose(){
+                Log.v(TAG, "arduino closed");
+            }
+        });
+        arduino.setDataHandler(new ArduinoFirmataDataHandler(){
+            public void onSysex(byte command, byte[] data){
+                String dataStr = "";
+                for (byte b : data) {
+                    dataStr += Integer.valueOf(b).toString();
+                    dataStr += ",";
+                }
+                Log.v(TAG, "sysex command : " + Integer.valueOf(command).toString() +
+                        "\nsysex data    : " + "["+dataStr+"]");
+            }
+        });
     }
 
     public void sendID(String id) {
@@ -49,6 +71,10 @@ public class MagspoofServiceImpl implements MagspoofService{
         if(arduino == null)
             return;
         arduino.close();
+    }
+
+    public String getFirmataVersion() {
+        return ArduinoFirmata.VERSION;
     }
 
 }

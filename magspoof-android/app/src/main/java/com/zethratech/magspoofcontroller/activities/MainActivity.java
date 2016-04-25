@@ -20,17 +20,24 @@ package com.zethratech.magspoofcontroller.activities;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.zethratech.magspoofcontroller.R;
+import com.zethratech.magspoofcontroller.services.MagspoofService;
+import com.zethratech.magspoofcontroller.services.MagspoofServiceImpl;
+
+import org.shokai.firmata.ArduinoFirmata;
 
 public class MainActivity extends AppCompatActivity {
 
 
     private String TAG = "MagspoofController - MainActivity";
+    private MagspoofService magspoofService = new MagspoofServiceImpl();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.v(TAG, "Firmata Lib Version : " + magspoofService.getFirmataVersion());
     }
 }
