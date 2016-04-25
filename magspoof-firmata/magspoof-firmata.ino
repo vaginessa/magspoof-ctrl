@@ -1,5 +1,4 @@
 #include <Firmata.h>
-#include <vector>
 
 #define PIN_A 0
 #define PIN_B 1
