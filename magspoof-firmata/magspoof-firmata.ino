@@ -18,8 +18,6 @@ char* tracks[] = {
 "" // Track 2
 };
 
-char nums[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-
 char revTrack[41];
 
 const int sublen[] = { 
@@ -184,29 +182,6 @@ void storeRevTrack(int track)
 }
 
 void stringCallback(char *track) {
-  using namespace std;
-  vector<char*> trys;
-  tracks[1] = "";
-  bool done = true;
-  trys.push_back(track)
-  while(!done) {
-    for(int i = 0; i < trys.size(); i ++) {
-      for(int j = 0; j < sizeof(trys[i]); j++) {
-        if(trys[i][j] == '*') {
-          done = false;
-          char* temp = trys[i];
-          trys.erase(trys.size() + i);
-          for(int k = 0; k < sizeof(nums); k++)
-            temp[j] = k;
-	    trys.push_back(temp);
-      }
-    }
-  }
-  for(int i = 0; i < sizeof(trys) {
-    for(int j = 0; j < sizeof(trys[i]); j++) {
-      
-    }
-  }
   tracks[1] = track;
   noInterrupts();
   playTrack(2);
@@ -217,6 +192,7 @@ void stringCallback(char *track) {
 }
 
 void sysexCallback(byte command, byte argc, byte *argv) {
+  stringCallback((char*) argv);
   Firmata.sendSysex(command, argc, argv);
 }
 
